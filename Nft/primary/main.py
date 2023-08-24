@@ -144,7 +144,8 @@ class EWB(object):
         params = {
                 'cid': cid,
                 'limit': 100,
-                'type': ['mint'],
+                'type': 'mint',
+                'tagContract': '0',
             }
         while True:
             try:
@@ -158,12 +159,12 @@ class EWB(object):
 
                     for i in list:
                         address = i['to']
-                    ok = self.exist(address)
-                    if ok:
-                        continue
-                    else:
-                        print('nftgo_minter address insert success ✅:', address, cid)
-                        add.insert_address(address)
+                        ok = self.exist(address)
+                        if ok:
+                            continue
+                        else:
+                            print('nftgo_minter address insert success ✅:', address, cid)
+                            add.insert_address(address)
 
                 cursor = data.get('cursor')
                 if cursor:
