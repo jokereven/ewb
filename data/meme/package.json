@@ -1,0 +1,17 @@
+{
+  "name": "findking",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "findKing.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^5.0.1",
+    "dotenv": "^16.0.1",
+    "ethers": "^5.6.4"
+  }
+}
