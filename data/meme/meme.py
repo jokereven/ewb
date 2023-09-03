@@ -11,7 +11,6 @@ class EWB(object):
         self.client = MongoClient('localhost', 27017)
         self.db = self.client[db]
         self.collection = self.db[collection]
-        self.offset_collection = self.db['offset']
 
     def nftgo(self, address: str):
         # https://api.nftgo.io/api/v1/activity/address-specific?address=0xa86f5324129c34312187cde5b42fe283fc493fd8&limit=100&type=buy&type=mint&type=sell&tagPassiveMint=0
@@ -21,6 +20,9 @@ class EWB(object):
             'limit': 100,
             'type': ['mint', 'buy', 'sell'],
         }
+        if self.collection.find_one({'address': address, 'pass': True}):
+            print('pass ✅:', address)
+            return
         while True:
             try:
                 response = requests.get(url, params=params, headers=headers)
@@ -39,6 +41,7 @@ class EWB(object):
                     params['cursor'] = cursor
                     print('cursor:', cursor)
                 else:
+                    self.collection.update_one({'address': address}, {'$set': {'pass': True}}, upsert=True)
                     break
 
             except Exception as e:
