@@ -5,15 +5,13 @@ import traceback
 import requests
 from pymongo import MongoClient
 
-
 class EWB(object):
-
 
     def __init__(self, db, collection):
         self.client = MongoClient('localhost', 27017)
         self.db = self.client[db]
         self.collection = self.db[collection]
-
+        self.offset_collection = self.db['offset']
 
     def track_rank(self):
         track_rank_mint_dir = [
@@ -54,7 +52,6 @@ class EWB(object):
         for i in track_rank_mint_dir:
             self.track_rank_mint(i['rank'], i['type'], i['order_by'], i['direction'], i['offset'], i['limit'])
 
-
     def track_rank_mint(self, rank: bool, type: str, order_by: str, direction: str, offset: int, limit: int):
         rank = 'rank' if rank else ''
         url = f'https://app.nfttrack.ai/api/{rank}/{type}?order_by={order_by}&direction={direction}&offset={offset}&limit={limit}'
@@ -72,7 +69,6 @@ class EWB(object):
                             add.insert_address(address)
         except Exception as e:
             print('track_rank_mint failed error ❌:', e, 'traceback:', traceback.format_exc())
-
 
     def nftgo(self, address: str):
         # https://api.nftgo.io/api/v1/activity/address-specific?address=0xa86f5324129c34312187cde5b42fe283fc493fd8&limit=100&type=buy&type=mint&type=sell&tagPassiveMint=0
@@ -104,13 +100,28 @@ class EWB(object):
             except Exception as e:
                 print('nftgo failed error ❌:', e, 'traceback:', traceback.format_exc())
 
+    def get_offset(self):
+        offset_doc = self.offset_collection.find_one()
+        if offset_doc:
+            print('offset_doc:', offset_doc)
+            time.sleep(random.random())
+            return offset_doc['offset']
+        else:
+            return 0
+
+    def set_offset(self, offset):
+        print('offset:', offset)
+        self.offset_collection.update_one({}, {'$set': {'offset': offset}}, upsert=True)
+
     def nftgo_collection(self):
         # https://api.nftgo.io/api/v2/ranking/collections?offset=0&limit=50&by=marketCapEth&asc=-1&rarity=-1&keyword=&fields=saleNum,saleNumChange,volume,volumeEth,volumeEthChange,orderAvgPriceETH,orderAvgPriceETHChange,orderAvgPrice,orderAvgPriceChange,bestOfferPrice,bestOfferPriceChange
 
+        offset = self.get_offset()
+        limit = 1
         url = f'https://api.nftgo.io/api/v2/ranking/collections'
         params = {
-            'offset': 0,
-            'limit': 100,
+            'offset': offset,
+            'limit': limit,
             'by': 'marketCapEth',
             'asc': -1,
             'rarity': -1,
@@ -131,13 +142,13 @@ class EWB(object):
                         self.nftgo_minter(cid)
 
                 if len(list) > 0:
-                    params['offset'] += 100
+                    offset += limit
+                    self.set_offset(offset)
                 else:
                     break
 
             except Exception as e:
                 print('nftgo_collection failed error ❌:', e, 'traceback:', traceback.format_exc())
-
 
     def nftgo_minter(self, cid: int):
         url = f'https://api.nftgo.io/api/v2/activity/collection'
@@ -152,7 +163,7 @@ class EWB(object):
                 response = requests.get(url, params=params, headers=headers)
                 time.sleep(random.random())
                 if response.status_code == 200:
-                    print('nftgo_minter success ✅:', cid, )
+                    print('nftgo_minter success ✅:', cid)
 
                     data = response.json()['data']
                     list = data.get('list')
@@ -170,12 +181,12 @@ class EWB(object):
                 if cursor:
                     time.sleep(random.random())
                     params['cursor'] = cursor
+                    print('nftgo_minter cursor:', cursor)
                 else:
                     break
 
             except Exception as e:
                 print('nftgo failed error ❌:', e, 'traceback:', traceback.format_exc())
-
 
     def exist(self, address):
         query = {'address': address}
@@ -186,10 +197,8 @@ class EWB(object):
         else:
             return False
 
-
     def get_all_address(self):
         return self.collection.find({})
-
 
     def insert_address(self, address):
         data = {
@@ -202,12 +211,14 @@ class EWB(object):
 if __name__ == '__main__':
 
     headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
-    'Accept': '*/*',
-    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+        'Accept': '*/*',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
     }
 
     add = EWB('ewb', 'ewb')
+
+    # add = EWB('fun', 'meme')
 
     add.track_rank()
 
