@@ -12,7 +12,7 @@ class EWB(object):
         self.db = self.client[db]
         self.collection = self.db[collection]
 
-    def nftgo(self, address: str):
+    def nftgo(self, address: str, index: int):
         # https://api.nftgo.io/api/v1/activity/address-specific?address=0xa86f5324129c34312187cde5b42fe283fc493fd8&limit=100&type=buy&type=mint&type=sell&tagPassiveMint=0
         url = f'https://api.nftgo.io/api/v1/activity/address-specific'
         params = {
@@ -27,7 +27,7 @@ class EWB(object):
             try:
                 response = requests.get(url, params=params, headers=headers)
                 if response.status_code == 200:
-                    print('nftgo success ✅:', address)
+                    print('nftgo success ✅:', address, index)
 
                     data = response.json()['data']
                     list = data.get('list')
@@ -105,4 +105,4 @@ if __name__ == '__main__':
 
         ewb = address['address']
 
-        add.nftgo(ewb)
+        add.nftgo(ewb, i)
