@@ -70,7 +70,18 @@ class EWB(object):
         except Exception as e:
             print('track_rank_mint failed error ❌:', e, 'traceback:', traceback.format_exc())
 
-    def nftgo(self, address: str):
+    def nft_filp(self):
+        with open('nftfilp.json', 'r') as f:
+            data = json.load(f)
+            for i in data['data']['list']:
+                address = i['address']
+                ok = self.exist(address)
+                if ok:
+                    continue
+                else:
+                    add.insert_address(address)
+
+    def nftgo(self, address: str, index: int):
         # https://api.nftgo.io/api/v1/activity/address-specific?address=0xa86f5324129c34312187cde5b42fe283fc493fd8&limit=100&type=buy&type=mint&type=sell&tagPassiveMint=0
         url = f'https://api.nftgo.io/api/v1/activity/address-specific'
         params = {
@@ -80,9 +91,13 @@ class EWB(object):
         }
         while True:
             try:
+                if self.collection.find_one({'address': address, 'go': True}):
+                    print('nftgo go ✅:', address, index)
+                    break
                 response = requests.get(url, params=params, headers=headers)
                 if response.status_code == 200:
-                    print('nftgo success ✅:', address)
+                    time.sleep(random.random())
+                    print('nftgo success ✅:', address, index)
 
                     data = response.json()['data']
                     list = data.get('list')
@@ -94,7 +109,9 @@ class EWB(object):
                 if cursor:
                     time.sleep(random.random())
                     params['cursor'] = cursor
+                    print('nftgo cursor:', cursor)
                 else:
+                    self.collection.update_one({'address': address}, {'$set': {'go': True}}, upsert=True)
                     break
 
             except Exception as e:
@@ -207,7 +224,6 @@ class EWB(object):
         print('address insert success ✅:', address)
         self.collection.insert_one(data)
 
-
 if __name__ == '__main__':
 
     headers = {
@@ -216,13 +232,11 @@ if __name__ == '__main__':
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
     }
 
-    add = EWB('ewb', 'ewb')
-
-    # add = EWB('fun', 'meme')
+    add = EWB('nft', 'nft_track')
 
     add.track_rank()
 
-    add.nftgo_collection()
+    add.nft_filp()
 
     addresses = add.get_all_address()
 
@@ -230,4 +244,4 @@ if __name__ == '__main__':
 
         ewb = address['address']
 
-        add.nftgo(ewb)
+        add.nftgo(ewb, i)
