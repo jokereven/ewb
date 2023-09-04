@@ -100,22 +100,30 @@ class EWB(object):
                     print('nftgo success ✅:', address, index)
 
                     data = response.json()['data']
+                    cursor = data.get('cursor')
+                    if cursor:
+                        time.sleep(random.random())
+                        params['cursor'] = cursor
+                        print('nftgo cursor:', cursor)
+
                     list = data.get('list')
-
-                    for i in list:
-                        self.collection.update_one({'address': address}, {'$addToSet': {'nftgo': i}}, upsert=True)
-
-                cursor = data.get('cursor')
-                if cursor:
-                    time.sleep(random.random())
-                    params['cursor'] = cursor
-                    print('nftgo cursor:', cursor)
-                else:
-                    self.collection.update_one({'address': address}, {'$set': {'go': True}}, upsert=True)
-                    break
+                    if list:
+                        # Update the document in batches
+                        for i in list:
+                            self.update_document(address, i)
+                    else:
+                        self.collection.update_one({'address': address}, {'$set': {'go': True}}, upsert=True)
+                        break
 
             except Exception as e:
-                print('nftgo failed error ❌:', e, 'traceback:', traceback.format_exc())
+                print('nftgo failed error ❌:', e, 'traceback:', 'traceback.format_exc()')
+                # print('nftgo failed error ❌:', e, 'traceback:', traceback.format_exc())
+                self.collection.update_one({'address': address}, {'$set': {'go': True, }}, upsert=True)
+                break
+
+    def update_document(self, address, data):
+        # Add data to the 'nftgo' array in the document
+        self.collection.update_one({'address': address}, {'$addToSet': {'nftgo': data}}, upsert=True)
 
     def get_offset(self):
         offset_doc = self.offset_collection.find_one()
@@ -234,9 +242,9 @@ if __name__ == '__main__':
 
     add = EWB('nft', 'nft_track')
 
-    add.track_rank()
+    # add.track_rank()
 
-    add.nft_filp()
+    # add.nft_filp()
 
     addresses = add.get_all_address()
 
@@ -245,3 +253,5 @@ if __name__ == '__main__':
         ewb = address['address']
 
         add.nftgo(ewb, i)
+
+# 18:08 index at 34
