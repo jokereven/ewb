@@ -253,5 +253,3 @@ if __name__ == '__main__':
         ewb = address['address']
 
         add.nftgo(ewb, i)
-
-# 18:08 index at 34
