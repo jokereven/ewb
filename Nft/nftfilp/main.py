@@ -12,6 +12,7 @@ class EWB(object):
         self.db = self.client[db]
         self.collection = self.db[collection]
         self.offset_collection = self.db['offset']
+        self.session = requests.Session()  # Create a session for making HTTP requests
 
     def get_all_address(self):
         return self.collection.find({})
@@ -21,21 +22,20 @@ class EWB(object):
         if self.collection.find_one({'address': address}).get('nfttrack'):
             print(f'[{i}] {address} exists', '❌')
             return
-        response = requests.get(url, headers=headers)
-        time.sleep(random.random())
-        if response.status_code == 200:
-            code = response.json()['code']
-            msg = response.json()['msg']
-            if code == 0 and msg == 'success':
-                data = response.json()['data']
-                self.collection.update_one({'address': address}, {'$set': {'data': data}})
-                self.collection.update_one({'address': address}, {'$set': {'nfttrack': True}})
-                print(f'[{i}] {address} {code} {msg}', '✅')
+        try:
+            response = self.session.get(url, headers=headers)
+            response.raise_for_status()  # Raise an exception if the request was not successful
+            time.sleep(random.random())
+            data = response.json().get('data')
+            if data:
+                self.collection.update_one({'address': address}, {'$set': {'data': data, 'nfttrack': True}})
+                print(f'[{i}] {address} Success', '✅')
             else:
-                print(f'[{i}] {address} {code} {msg}', '❌')
+                print(f'[{i}] {address} No data found', '❌')
+        except requests.exceptions.RequestException as e:
+            print(f'[{i}] {address} Request Error:', e)
 
 if __name__ == '__main__':
-
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
         'Accept': '*/*',
@@ -47,7 +47,5 @@ if __name__ == '__main__':
     addresses = add.get_all_address()
 
     for i, address in enumerate(addresses):
-
         ewb = address['address']
-
         add.nfttrack(ewb, i)
