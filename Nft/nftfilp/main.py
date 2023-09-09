@@ -17,6 +17,18 @@ class EWB(object):
     def get_all_address(self):
         return self.collection.find({})
 
+    def update_index(self, index):
+        if self.offset_collection.find_one({'meme': 'index'}):
+            self.offset_collection.update_one({'meme': 'index'}, {'$set': {'index': index}})
+        else:
+            self.offset_collection.insert_one({'meme': 'index'}, {'$set': {'index': index}})
+
+    def get_index(self):
+        if self.offset_collection.find_one({'meme': 'index'}):
+            return self.offset_collection.find_one({'meme': 'index'}).get('index')
+        else:
+            return 0
+
     def nfttrack(self, address, i):
         url = f'https://app.nfttrack.ai/api/address_info/{address}'
         if self.collection.find_one({'address': address}).get('nfttrack'):
@@ -43,9 +55,13 @@ if __name__ == '__main__':
     }
 
     add = EWB('fun', 'meme')
+    index = EWB('fun', 'index')
 
     addresses = add.get_all_address()
+    op = index.get_index()
 
     for i, address in enumerate(addresses):
         ewb = address['address']
-        add.nfttrack(ewb, i)
+        if i > op:
+            add.nfttrack(ewb, i)
+            index.update_index(i)
