@@ -54,14 +54,14 @@ if __name__ == '__main__':
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
     }
 
-    add = EWB('fun', 'meme')
-    index = EWB('fun', 'index')
+    add = EWB('gmgn', 'meme')
+    index = EWB('gmgn', 'index')
 
     addresses = add.get_all_address()
     op = index.get_index()
 
     for i, address in enumerate(addresses):
         ewb = address['address']
-        if i > op:
+        if i >= op:
             add.nfttrack(ewb, i)
             index.update_index(i)

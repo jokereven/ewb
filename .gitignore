@@ -3,4 +3,5 @@ include
 lib
 lib64
 pyvenv.cfg
+.env
 node_modules
