@@ -1,8 +1,9 @@
 import json
 import random
 import time
-import traceback
+import datetime
 import requests
+import traceback
 from pymongo import MongoClient
 
 class EWB(object):
@@ -60,8 +61,74 @@ if __name__ == '__main__':
     addresses = add.get_all_address()
     op = index.get_index()
 
-    for i, address in enumerate(addresses):
-        ewb = address['address']
-        if i >= op:
-            add.nfttrack(ewb, i)
-            index.update_index(i)
+    # fetch
+
+    def fetch():
+        for i, address in enumerate(addresses):
+            ewb = address['address']
+            if i >= op:
+                add.nfttrack(ewb, i)
+                index.update_index(i)
+
+    fetch()
+
+    # 一级
+    def minter():
+        for i, eth in enumerate(addresses):
+            ewb = eth['address']
+            data = eth.get('data', {})
+
+            roi = data.get('roi', 0)
+            win_rate = data.get('win_rate', 0)
+
+            last_active_timestamp = data.get('last_active_timestamp', 0)
+            one_week = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime("%s")
+            txs_7d = data.get('txs_7d', 0)
+
+            nft_count = data.get('nft_count', 0)
+            adjusted_nft_count = data.get('adjusted_nft_count', 0)
+
+            win_sales = data.get('win_sales', 0)
+
+            # bluechip or whale
+            is_bluechip_owner = data.get('is_bluechip_owner', False)
+            is_whale = data.get('is_whale', False)
+
+            # 1. 七天有交易
+            # 2. 胜率高
+            # 3. 回报率高
+
+            # time
+            if txs_7d is not None and txs_7d <= 0:
+                continue
+
+            elif last_active_timestamp is not None and int(last_active_timestamp) < int( one_week):
+                continue
+
+
+            # win_rate
+            elif win_rate is not None and win_rate < 0.95:
+                continue
+
+            # roi
+            elif roi is not None and roi < 2.5:
+                continue
+
+            # all nft count
+            elif nft_count is not None and nft_count > 100:
+                continue
+
+            # win sales
+            elif win_sales is not None and win_sales < 28:
+                continue
+
+            with open('minter.txt', 'a') as f:
+                f.write(f'{ewb}\n')
+
+    # 二级
+    def bs():
+        print
+
+minter()
+
+# TODO 找到一级二级地址
